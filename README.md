@@ -1,9 +1,9 @@
-# Length based RMA
+# Length-based recurrence measures from microstates
 
 This code base is using the [Julia Language](https://julialang.org/) and
 [DrWatson](https://juliadynamics.github.io/DrWatson.jl/stable/)
 to make a reproducible scientific project named
-> Length based RMA
+> Length-based recurrence measures from microstates
 
 It is authored by Felipe Eduardo Lopes da Cruz, Gabriel Vinicius Ferreira, Thiago de Lima Prado, Sergio Roberto Lopes, Norbert Marwan, Jürgen Kurths.
 
