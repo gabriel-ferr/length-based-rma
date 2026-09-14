@@ -1,6 +1,6 @@
 # --------------------------------------------------------------------------------
 #       This script generates NUM_INITIAL_CONDITIONS time-series for each system
-#   using DEFAULT_TIMESERIES_LENGTH points per time-series.
+#   using TIMESERIES_LENGTH_RANGE[j] points per time-series.
 #   Here, we generate:
 #   - Gaussian white noise (GWN)
 #   - Red noise
@@ -22,6 +22,8 @@ using ProgressMeter
 using RecurrenceAnalysis
 using RecurrenceMicrostatesAnalysis
 # --------------------------------------------------------------------------------
+include(srcdir("measures.jl"))
+# --------------------------------------------------------------------------------
 function harmonic_oscilator!(du, u, p, _)
     ω = p
     x, v = u
@@ -33,11 +35,11 @@ results = Array{Float64, 5}(undef, NUM_INITIAL_CONDITIONS, length(TIMESERIES_LEN
 # --------------------------------------------------------------------------------
 @showprogress for i ∈ 1:NUM_INITIAL_CONDITIONS
     for j ∈ eachindex(TIMESERIES_LENGTH_RANGE)
-        gwn = StateSpaceSet(rand(Normal(0, 1), DEFAULT_TIMESERIES_LENGTH))
+        gwn = StateSpaceSet(rand(Normal(0, 1), TIMESERIES_LENGTH_RANGE[j]))
 
         sys = PredefinedDynamicalSystems.henon(rand(Uniform(0, 1), 2); a = henon_params[1], b = henon_params[2])
-        henon, _ = trajectory(sys, DEFAULT_TIMESERIES_LENGTH; Ttr = TRANSIENT_TIME)
-        henon = henon[1:DEFAULT_TIMESERIES_LENGTH]
+        henon, _ = trajectory(sys, TIMESERIES_LENGTH_RANGE[j]; Ttr = TRANSIENT_TIME)
+        henon = henon[1:TIMESERIES_LENGTH_RANGE[j]]
 
         while true
             if any(isfinite, Iterators.flatten(henon))
@@ -45,17 +47,17 @@ results = Array{Float64, 5}(undef, NUM_INITIAL_CONDITIONS, length(TIMESERIES_LEN
             end
 
             sys = PredefinedDynamicalSystems.henon(rand(Uniform(0, 1), 2); a = henon_params[1], b = henon_params[2])
-            henon, _ = trajectory(sys, DEFAULT_TIMESERIES_LENGTH; Ttr = TRANSIENT_TIME)
-            henon = henon[1:DEFAULT_TIMESERIES_LENGTH]
+            henon, _ = trajectory(sys, TIMESERIES_LENGTH_RANGE[j]; Ttr = TRANSIENT_TIME)
+            henon = henon[1:TIMESERIES_LENGTH_RANGE[j]]
         end
         
         sys = PredefinedDynamicalSystems.lorenz(rand(Uniform(0, 1), 3); σ = lorenz_params[1], β = lorenz_params[2], ρ = lorenz_params[3])
-        lorenz, _ = trajectory(sys, DEFAULT_TIMESERIES_LENGTH * 0.2 + 1; Ttr = TRANSIENT_TIME * 0.2, Δt = 0.2)
-        lorenz = lorenz[1:DEFAULT_TIMESERIES_LENGTH]
+        lorenz, _ = trajectory(sys, TIMESERIES_LENGTH_RANGE[j] * 0.2 + 1; Ttr = TRANSIENT_TIME * 0.2, Δt = 0.2)
+        lorenz = lorenz[1:TIMESERIES_LENGTH_RANGE[j]]
 
         sys = CoupledODEs(harmonic_oscilator!, rand(2), ho_params)
-        ho, _ = trajectory(sys, DEFAULT_TIMESERIES_LENGTH * 0.01 + 1; Ttr = TRANSIENT_TIME * 0.01, Δt = 0.01)
-        ho = ho[1:DEFAULT_TIMESERIES_LENGTH]
+        ho, _ = trajectory(sys, TIMESERIES_LENGTH_RANGE[j] * 0.01 + 1; Ttr = TRANSIENT_TIME * 0.01, Δt = 0.01)
+        ho = ho[1:TIMESERIES_LENGTH_RANGE[j]]
 
         input = [gwn, henon, lorenz, ho]
 

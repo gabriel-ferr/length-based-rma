@@ -56,7 +56,7 @@ end
 mins_vals = Array{Int, 3}(undef, 3, 5, 2)
 for n ∈ 1:3
     # --------------------------------------------------------------------------------
-    fig = Figure(size = (1200, 1000))
+    fig = Figure(size = (1200, 680))
     # --------------------------------------------------------------------------------
     ax = Axis(fig[1, 1], xlabel = L"\text{Threshold}~(\varepsilon)", ylabel = L"\text{Relative error}", title = L"\textbf{(A) Gaussian white noise}", yscale = log10)
     band!(ax, THRESHOLD_RANGE, condensed[2, :, 1, n, 1], condensed[3, :, 1, n, 1], color = (:blue, 0.08))
@@ -68,17 +68,17 @@ for n ∈ 1:3
     hlines!(ax, 0.05, linestyle = :dash, color = :black, label = L"\text{Error} = 5\%")
     axislegend(ax, position = :rb)
     # --------------------------------------------------------------------------------
-    ax = Axis(fig[1, 2], xlabel = L"\text{Threshold}~(\varepsilon)", ylabel = L"\text{Relative error}", title = L"\textbf{(B) Red noise}", yscale = log10)
-    band!(ax, THRESHOLD_RANGE, condensed[2, :, 2, n, 1], condensed[3, :, 2, n, 1], color = (:blue, 0.08))
-    band!(ax, THRESHOLD_RANGE, condensed[2, :, 2, n, 2], condensed[3, :, 2, n, 2], color = (:orangered4, 0.08))
+    # ax = Axis(fig[1, 2], xlabel = L"\text{Threshold}~(\varepsilon)", ylabel = L"\text{Relative error}", title = L"\textbf{(B) Red noise}", yscale = log10)
+    # band!(ax, THRESHOLD_RANGE, condensed[2, :, 2, n, 1], condensed[3, :, 2, n, 1], color = (:blue, 0.08))
+    # band!(ax, THRESHOLD_RANGE, condensed[2, :, 2, n, 2], condensed[3, :, 2, n, 2], color = (:orangered4, 0.08))
 
-    scatterlines!(ax, THRESHOLD_RANGE, condensed[1, :, 2, n, 1], label = L"\ell_{min}=1", color = :blue, marker = :utriangle, markersize = 8, strokecolor = :blue, strokewidth = 1, markercolor = (:white, 0.0), linewidth = 0.8)
-    scatterlines!(ax, THRESHOLD_RANGE, condensed[1, :, 2, n, 2], label = L"\ell_{min}=2", color = :orangered4, marker = :rect, markersize = 8, strokecolor = :orangered4, strokewidth = 1, markercolor = (:white, 0.0), linewidth = 0.8)
+    # scatterlines!(ax, THRESHOLD_RANGE, condensed[1, :, 2, n, 1], label = L"\ell_{min}=1", color = :blue, marker = :utriangle, markersize = 8, strokecolor = :blue, strokewidth = 1, markercolor = (:white, 0.0), linewidth = 0.8)
+    # scatterlines!(ax, THRESHOLD_RANGE, condensed[1, :, 2, n, 2], label = L"\ell_{min}=2", color = :orangered4, marker = :rect, markersize = 8, strokecolor = :orangered4, strokewidth = 1, markercolor = (:white, 0.0), linewidth = 0.8)
 
-    hlines!(ax, 0.05, linestyle = :dash, color = :black, label = L"\text{Error} = 5\%")
-    axislegend(ax, position = :rb)
+    # hlines!(ax, 0.05, linestyle = :dash, color = :black, label = L"\text{Error} = 5\%")
+    # axislegend(ax, position = :rb)
     # --------------------------------------------------------------------------------
-    ax = Axis(fig[2, 1], xlabel = L"\text{Threshold}~(\varepsilon)", ylabel = L"\text{Relative error}", title = L"\textbf{(C) Hénon map}", yscale = log10)
+    ax = Axis(fig[1, 2], xlabel = L"\text{Threshold}~(\varepsilon)", ylabel = L"\text{Relative error}", title = L"\textbf{(B) Hénon map}", yscale = log10)
     band!(ax, THRESHOLD_RANGE, condensed[2, :, 3, n, 1], condensed[3, :, 3, n, 1], color = (:blue, 0.08))
     band!(ax, THRESHOLD_RANGE, condensed[2, :, 3, n, 2], condensed[3, :, 3, n, 2], color = (:orangered4, 0.08))
 
@@ -88,7 +88,7 @@ for n ∈ 1:3
     hlines!(ax, 0.05, linestyle = :dash, color = :black, label = L"\text{Error} = 5\%")
     axislegend(ax, position = :rb)
     # --------------------------------------------------------------------------------
-    ax = Axis(fig[2, 2], xlabel = L"\text{Threshold}~(\varepsilon)", ylabel = L"\text{Relative error}", title = L"\textbf{(D) Lorenz system}", yscale = log10)
+    ax = Axis(fig[2, 1], xlabel = L"\text{Threshold}~(\varepsilon)", ylabel = L"\text{Relative error}", title = L"\textbf{(C) Lorenz system}", yscale = log10)
     band!(ax, THRESHOLD_RANGE, condensed[2, :, 4, n, 1], condensed[3, :, 4, n, 1], color = (:blue, 0.08))
     band!(ax, THRESHOLD_RANGE, condensed[2, :, 4, n, 2], condensed[3, :, 4, n, 2], color = (:orangered4, 0.08))
 
@@ -98,7 +98,7 @@ for n ∈ 1:3
     hlines!(ax, 0.05, linestyle = :dash, color = :black, label = L"\text{Error} = 5\%")
     axislegend(ax, position = :rb)
     # --------------------------------------------------------------------------------
-    ax = Axis(fig[3, 1], xlabel = L"\text{Threshold}~(\varepsilon)", ylabel = L"\text{Relative error}", title = L"\textbf{(E) Harmonic oscillator, } x", yscale = log10)
+    ax = Axis(fig[2, 2], xlabel = L"\text{Threshold}~(\varepsilon)", ylabel = L"\text{Relative error}", title = L"\textbf{(D) Harmonic oscillator, } x", yscale = log10)
     band!(ax, THRESHOLD_RANGE, condensed[2, :, 5, n, 1], condensed[3, :, 5, n, 1], color = (:blue, 0.08))
     band!(ax, THRESHOLD_RANGE, condensed[2, :, 5, n, 2], condensed[3, :, 5, n, 2], color = (:orangered4, 0.08))
 
@@ -109,17 +109,6 @@ for n ∈ 1:3
     axislegend(ax, position = :rb)
     # --------------------------------------------------------------------------------
     save(plotsdir("threshold_n=$n.png"), fig; px_per_unit = 2)
-    # --------------------------------------------------------------------------------
-    for s ∈ 1:5
-        a = [filter(x -> (!isnan(x) && 0 ≤ x ≤ 1), condensed[1, :, s, n, 1]), filter(x -> (!isnan(x)  && 0 ≤ x ≤ 1), condensed[1, :, s, n, 2])]
-        mn = [findmin(a[1]), findmin(a[2])]
-        mx = [findmax(a[1]), findmax(a[2])]
-
-        println("For n = $n, s = $s : min = $mn; max = $mx")
-
-        mins_vals[n, s, 1] = mn[1][2]
-        mins_vals[n, s, 2] = mn[2][2]
-    end
     # --------------------------------------------------------------------------------
 end
 # --------------------------------------------------------------------------------

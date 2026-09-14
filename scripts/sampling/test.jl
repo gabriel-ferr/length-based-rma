@@ -22,6 +22,8 @@ using ProgressMeter
 using RecurrenceAnalysis
 using RecurrenceMicrostatesAnalysis
 # --------------------------------------------------------------------------------
+include(srcdir("measures.jl"))
+# --------------------------------------------------------------------------------
 function harmonic_oscilator!(du, u, p, _)
     ω = p
     x, v = u
