@@ -1,11 +1,11 @@
 #
 #       This code extends the package RecurrenceMicrostatesAnalysis.jl
-#   by implementing the proposed estimator.
+#   by implementing the proposed estimators.
 # =============================================================================
 using ComplexityMeasures
 using RecurrenceMicrostatesAnalysis
 # =============================================================================
-#   Structures
+#       Structures
 struct RecurrenceAverageDiagonal{L, M, SM} <: ComplexityEstimator 
     ε::Real
     metric::M
@@ -35,24 +35,9 @@ function ComplexityMeasures.complexity(
         x::Union{StateSpaceSet, Vector{<:Real}}, 
         y::Union{StateSpaceSet, Vector{<:Real}} = x;
     ) where {L}
-
+    #       Assert minimum diagonal length.
     @assert 1 ≤ L ≤ 2 "The minimum diagonal length must be 1 or 2."
-    if !(x isa StateSpaceSet)
-        x = StateSpaceSet(x)
-    end
-
-    if !(y isa StateSpaceSet)
-        y = StateSpaceSet(x)
-    end
-
-    # x_eff = copy(x)
-    # y_eff = copy(y)
-    # push!(x_eff, 1e3 .* maximum(x_eff))
-    # push!(y_eff, 1e3 .* maximum(y_eff))
-
-    rmspace = RecurrenceMicrostates(c.ε, L + 1; metric = c.metric, sampling = c.sampling, space = TriangleSamplingSpace())
-    probs = probabilities(rmspace, x, y)
-    return measure(c, rmspace, probs)
+    return measure(c, x, y)
 end
 
 function ComplexityMeasures.complexity(
@@ -60,24 +45,9 @@ function ComplexityMeasures.complexity(
         x::Union{StateSpaceSet, Vector{<:Real}}, 
         y::Union{StateSpaceSet, Vector{<:Real}} = x;
     ) where {L}
-
+    #       Assert minimum diagonal length.
     @assert 1 ≤ L ≤ 2 "The minimum diagonal length must be 1 or 2."
-    if !(x isa StateSpaceSet)
-        x = StateSpaceSet(x)
-    end
-
-    if !(y isa StateSpaceSet)
-        y = StateSpaceSet(x)
-    end
-
-    # x_eff = copy(x)
-    # y_eff = copy(y)
-    # push!(x_eff, 1e6 .* maximum(x_eff))
-    # push!(y_eff, 1e6 .* maximum(y_eff))
-
-    rmspace = RecurrenceMicrostates(c.ε, L + 1; metric = c.metric, sampling = c.sampling, space = TriangleSamplingSpace())
-    probs = probabilities(rmspace, x, y)
-    return measure(c, rmspace, probs)
+    return measure(c, x, y)
 end
 
 function ComplexityMeasures.complexity(
@@ -85,135 +55,249 @@ function ComplexityMeasures.complexity(
         x::Union{StateSpaceSet, Vector{<:Real}}, 
         y::Union{StateSpaceSet, Vector{<:Real}} = x;
     ) where {L}
-
+    #       Assert minimum diagonal length.
     @assert 1 ≤ L ≤ 2 "The minimum diagonal length must be 1 or 2."
-    if !(x isa StateSpaceSet)
-        x = StateSpaceSet(x)
-    end
-
-    if !(y isa StateSpaceSet)
-        y = StateSpaceSet(x)
-    end
-
-    # x_eff = copy(x)
-    # y_eff = copy(y)
-    # push!(x_eff, 1e3 .* maximum(x_eff))
-    # push!(y_eff, 1e3 .* maximum(y_eff))
-
-    rmspace = RecurrenceMicrostates(c.ε, L + 1; metric = c.metric, sampling = c.sampling, space = TriangleSamplingSpace())
-    probs = probabilities(rmspace, x, y)
-    return measure(c, rmspace, probs)
+    return measure(c, x, y)
 end
 # =============================================================================
 #   Measure functions
-function measure(_::RecurrenceAverageDiagonal{1}, rmspace::RecurrenceMicrostates, probs::Probabilities)
-    if (rmspace.shape isa RecurrenceMicrostatesAnalysis.Rect2Microstate{2, 2, 2} && length(probs) == 16)
-        rr = RecurrenceMicrostatesAnalysis.measure(RecurrenceRate(0.0), probs)
-        div_val = probs[2] + probs[4] + probs[6] + probs[8]
-        return rr / div_val
-    elseif (rmspace.shape isa DiagonalMicrostate{2, 2} && length(probs) == 4)
-        return 1 + (probs[4] / probs[2])
-    else
-        msg = "Average diagonal length must be computed using square or diagonal microstates with n = 2 for lmin = 1."
-        throw(ArgumentError(msg))
-    end
+#   L_min = 1
+function measure(
+    opt::RecurrenceAverageDiagonal{1}, 
+    x::Union{StateSpaceSet, Vector{<:Real}},
+    y::Union{StateSpaceSet, Vector{<:Real}} = x;
+    )
+    @assert length(x) == length(y) "Input must have same size."
+
+    #   Compute the recurrence microstates distributions
+    cnts_overall, outs_overall = counts_and_outcomes(
+        RecurrenceMicrostates(
+            opt.ε, DiagonalMicrostate(2); metric = opt.metric, sampling = opt.sampling
+        ),
+        x, y
+    )
+    probs_overall = Probabilities(cnts_overall, outs_overall)
+
+    cnts_last_col, _ = counts_and_outcomes(
+        RecurrenceMicrostates(
+            opt.ε, 1; metric = opt.metric, sampling = opt.sampling,
+            space = LimitedRectSamplingSpace(length(x), 1, 0, length(y) - 1)
+        ),
+        x, y
+    )
+
+    #   Compute quantities
+    RR = RecurrenceMicrostatesAnalysis.measure(RecurrenceRate(opt.ε), probs_overall)
+    ∂D1 = (2 * cnts_last_col[2]) + 1
+
+    return ((length(x)^2) / ((length(x) - 1)^2)) * (RR) / (probs_overall[2] + (∂D1 / ((length(x) - 1)^2)))
 end
 
-function measure(_::RecurrenceAverageDiagonal{2}, rmspace::RecurrenceMicrostates, probs::Probabilities)
-    if (rmspace.shape isa RecurrenceMicrostatesAnalysis.Rect2Microstate{3, 3, 2} && length(probs) == 512)
-        num_val = 0.0
-        div_val = 0.0
+function measure(
+    opt::RecurrenceTrappingTime{1}, 
+    x::Union{StateSpaceSet, Vector{<:Real}},
+    y::Union{StateSpaceSet, Vector{<:Real}} = x;
+    )
+    @assert length(x) == length(y) "Input must have same size."
 
-        for a1 ∈ 0:1, a2 ∈ 0:1, a3 ∈ 0:1, a4 ∈ 0:1, a5 ∈ 0:1, a6 ∈ 0:1, a7 ∈ 0:1
-            I_num = 1 + (1 + a1 * 2 + a2 * 4 + a3 * 8 + 16 + a4 * 32 + a5 * 64 + a6 * 128 + a7 * 256)
-            num_val += probs[I_num]
+    #   Compute the recurrence microstates distributions
+    cnts_overall, outs_overall = counts_and_outcomes(
+        RecurrenceMicrostates(
+            opt.ε, RectMicrostate(1, 2); metric = opt.metric, sampling = opt.sampling
+        ),
+        x, y
+    )
+    probs_overall = Probabilities(cnts_overall, outs_overall)
 
-            if (a7 == 1)
-                I_div = 1 + (a1 * 2 + a2 * 4 + a3 * 8 + 16 + a4 * 32 + a5 * 64 + a6 * 128 + 256)
-                div_val += probs[I_div]
-            end
-        end
+    cnts_last_col, _ = counts_and_outcomes(
+        RecurrenceMicrostates(
+            opt.ε, 1; metric = opt.metric, sampling = opt.sampling,
+            space = LimitedRectSamplingSpace(length(x), 1, 0, length(y) - 1)
+        ),
+        x, y
+    )
 
-        return 1 + (num_val / div_val)
-    elseif (rmspace.shape isa DiagonalMicrostate{3, 2} && length(probs) == 8)
-        return 1 + ((probs[4] + probs[8]) / probs[7])
-    else
-        msg = "Average diagonal length must be computed using square or diagonal microstates with n = 3 for lmin = 2."
-        throw(ArgumentError(msg))
-    end
+    #   Compute quantities
+    RR = RecurrenceMicrostatesAnalysis.measure(RecurrenceRate(opt.ε), probs_overall)
+    ∂TT1 = cnts_last_col[2]
+
+    return ((length(x)^2) / ((length(x) - 1)^2)) * (RR) / (probs_overall[2] + (∂TT1 / ((length(x) - 1)^2)))
 end
 
-function measure(_::RecurrenceTrappingTime{1}, rmspace::RecurrenceMicrostates, probs::Probabilities)
-    if (rmspace.shape isa RecurrenceMicrostatesAnalysis.Rect2Microstate{2, 2, 2} && length(probs) == 16)
-        rr = RecurrenceMicrostatesAnalysis.measure(RecurrenceRate(0.0), probs)
-        div_val = probs[2] + probs[6] + probs[10] + probs[14]
-        return rr / div_val
-    elseif (rmspace.shape isa RecurrenceMicrostatesAnalysis.Rect2Microstate{1, 2, 2} && length(probs) == 4)
-        return 1 + (probs[4] / probs[2])
-    else
-        msg = "Trapping time must be computed using square or row microstates with n = 2 for lmin = 1."
-        throw(ArgumentError(msg))
-    end
+function measure(
+    opt::RecurrenceMeanTime{1}, 
+    x::Union{StateSpaceSet, Vector{<:Real}},
+    y::Union{StateSpaceSet, Vector{<:Real}} = x;
+    )
+    @assert length(x) == length(y) "Input must have same size."
+
+    #   Compute the recurrence microstates distributions
+    cnts_overall, outs_overall = counts_and_outcomes(
+        RecurrenceMicrostates(
+            opt.ε, RectMicrostate(1, 2); metric = opt.metric, sampling = opt.sampling
+        ),
+        x, y
+    )
+    probs_overall = Probabilities(cnts_overall, outs_overall)
+
+    cnts_last_col, _ = counts_and_outcomes(
+        RecurrenceMicrostates(
+            opt.ε, 1; metric = opt.metric, sampling = opt.sampling,
+            space = LimitedRectSamplingSpace(length(x), 1, 0, length(y) - 1)
+        ),
+        x, y
+    )
+
+    #   Compute quantities
+    RR = RecurrenceMicrostatesAnalysis.measure(RecurrenceRate(opt.ε), probs_overall)
+    ∂RT1 = cnts_last_col[1]
+
+    return ((length(x)^2) / ((length(x) - 1)^2)) * (RR) / (probs_overall[3] + (∂RT1 / ((length(x) - 1)^2)))
 end
 
-function measure(_::RecurrenceTrappingTime{2}, rmspace::RecurrenceMicrostates, probs::Probabilities)
-    if (rmspace.shape isa RecurrenceMicrostatesAnalysis.Rect2Microstate{3, 3, 2} && length(probs) == 512)
-        num_val = 0.0
-        div_val = 0.0
+#################
+#   L_min = 2
+function measure(
+    opt::RecurrenceAverageDiagonal{2}, 
+    x::Union{StateSpaceSet, Vector{<:Real}},
+    y::Union{StateSpaceSet, Vector{<:Real}} = x;
+    )
+    @assert length(x) == length(y) "Input must have same size."
 
-        for a1 ∈ 0:1, a2 ∈ 0:1, a3 ∈ 0:1, a4 ∈ 0:1, a5 ∈ 0:1, a6 ∈ 0:1, a7 ∈ 0:1
-            I_num = 1 + (1 + 2 + a1 * 4 + a2 * 8 + a3 * 16 + a4 * 32 + a5 * 64 + a6 * 128 + a7 * 256)
-            num_val += probs[I_num]
+    #   Compute the recurrence microstates distributions
+    cnts_overall, outs_overall = counts_and_outcomes(
+        RecurrenceMicrostates(
+            opt.ε, DiagonalMicrostate(3); metric = opt.metric, sampling = opt.sampling
+        ),
+        x, y
+    )
+    probs_overall = Probabilities(cnts_overall, outs_overall)
 
-            if (a1 == 1)
-                I_div = 1 + (2 + 4 + a2 * 8 + a3 * 16 + a4 * 32 + a5 * 64 + a6 * 128 + a7 * 256)
-                div_val += probs[I_div]
-            end
-        end
+    cnts_last_col, _ = counts_and_outcomes(
+        RecurrenceMicrostates(
+            opt.ε, DiagonalMicrostate(2); metric = opt.metric, sampling = opt.sampling,
+            space = LimitedRectSamplingSpace(1, 1, length(x) - 1, 0)
+        ),
+        x, y
+    )
 
-        return 1 + (num_val / div_val)
-    elseif (rmspace.shape isa RecurrenceMicrostatesAnalysis.Rect2Microstate{1, 3, 2} && length(probs) == 8)
-        return 1 + ((probs[4] + probs[8]) / probs[7])
-    else
-        msg = "Trapping time must be computed using square or row microstates with n = 3 for lmin = 2."
-        throw(ArgumentError(msg))
-    end
-end
+    #   Compute quantities
+    RR = RecurrenceMicrostatesAnalysis.measure(RecurrenceRate(opt.ε), probs_overall)
+    ∂D2 = (2 * cnts_last_col[4]) - 1
 
-function measure(_::RecurrenceMeanTime{1}, rmspace::RecurrenceMicrostates, probs::Probabilities)
-    if (rmspace.shape isa RecurrenceMicrostatesAnalysis.Rect2Microstate{2, 2, 2} && length(probs) == 16)
-        rr = RecurrenceMicrostatesAnalysis.measure(RecurrenceRate(0.0), probs)
-        div_val = probs[3] + probs[7] + probs[11] + probs[15]
-        return (1 - rr) / div_val
-    elseif (rmspace.shape isa RecurrenceMicrostatesAnalysis.Rect2Microstate{1, 2, 2} && length(probs) == 4)
-        return 1 + (probs[1] / probs[3])
-    else
-        msg = "Mean recurrence time must be computed using square or row microstates with n = 2 for lmin = 1."
-        throw(ArgumentError(msg))
-    end
-end
-
-function measure(_::RecurrenceMeanTime{2}, rmspace::RecurrenceMicrostates, probs::Probabilities)
-    if (rmspace.shape isa RecurrenceMicrostatesAnalysis.Rect2Microstate{3, 3, 2} && length(probs) == 512)
-        num_val = 0.0
-        div_val = 0.0
-
-        for a1 ∈ 0:1, a2 ∈ 0:1, a3 ∈ 0:1, a4 ∈ 0:1, a5 ∈ 0:1, a6 ∈ 0:1, a7 ∈ 0:1
-            I_num = 1 + (a1 * 4 + a2 * 8 + a3 * 16 + a4 * 32 + a5 * 64 + a6 * 128 + a7 * 256)
-            num_val += probs[I_num]
-
-            if (a1 == 1)
-                I_div = 1 + (1 + a2 * 8 + a3 * 16 + a4 * 32 + a5 * 64 + a6 * 128 + a7 * 256)
-                div_val += probs[I_div]
-            end
-        end
-
-        return 1 + (num_val / div_val)
-    elseif (rmspace.shape isa RecurrenceMicrostatesAnalysis.Rect2Microstate{1, 3, 2} && length(probs) == 8)
-        return 1 + ((probs[1] + probs[5]) / probs[2])
-    else
-        msg = "Mean recurrence time must be computed using square or row microstates with n = 3 for lmin = 2."
-        throw(ArgumentError(msg))
-    end
+    return 1 + ((probs_overall[4] + probs_overall[8]) / (probs_overall[7] + (∂D2 / ((length(x) - 2)^2))))
 end
 # =============================================================================
+#   Modify the TriangleSamplingSpace and RectSamplingSpace to select a specific
+#   area of the RP. This part is VERY complex, because I need to adapt some backend
+#   stuff of the package ... Note that I only implemented it for rectangle microstates,
+#   because its implementation is a little hard, and now I just need it for rectangle.
+struct LimitedRectSamplingSpace <: AbstractSamplingSpace
+    init_x::Int
+    init_y::Int
+    len_x::Int
+    len_y::Int
+end
+
+LimitedRectSamplingSpace(x = 1, y = 1, len_x = 0, len_y = 0) = LimitedRectSamplingSpace(x, y, len_x, len_y)
+# =============================================================================
+struct ExtendedSSRect2 <: RecurrenceMicrostatesAnalysis.InternalSamplingSpace
+    init_W::Int
+    init_H::Int
+    len_W::Int
+    len_H::Int
+end
+# =============================================================================
+function RecurrenceMicrostatesAnalysis.SamplingSpace(
+        ::RecurrenceMicrostatesAnalysis.Rect2Microstate{W, H},
+        space::LimitedRectSamplingSpace,
+        x::StateSpaceSet,
+        y::StateSpaceSet
+    ) where {W, H}
+
+    Lx, Ly = length(x), length(y)
+
+    @assert 1 ≤ space.init_x ≤ Lx - W + 1 "Invalid `init_x`. Use 1 ≤ init_x ≤ $(Lx - W + 1)."
+    @assert 1 ≤ space.init_y ≤ Ly - H + 1 "Invalid `init_y`. Use 1 ≤ init_y ≤ $(Ly - H + 1)."
+
+    # número de posições iniciais válidas
+    len_W = space.len_x <= 0 ? (Lx - W + 1) - (space.init_x - 1) : space.len_x
+    len_H = space.len_y <= 0 ? (Ly - H + 1) - (space.init_y - 1) : space.len_y
+
+    @assert len_W ≥ 1 "Invalid x-window length."
+    @assert len_H ≥ 1 "Invalid y-window length."
+    @assert space.init_x + len_W + W - 2 ≤ Lx "The x-window exceeds the time-series length. Use len_x ≤ $(Lx - W - space.init_x + 2)."
+    @assert space.init_y + len_H + H - 2 ≤ Ly "The y-window exceeds the time-series length. Use len_y ≤ $(Ly - H - space.init_y + 2)."
+
+    return ExtendedSSRect2(space.init_x, space.init_y, len_W, len_H)
+end
+
+function RecurrenceMicrostatesAnalysis.SamplingSpace(
+        ::DiagonalMicrostate{N},
+        space::LimitedRectSamplingSpace,
+        x::StateSpaceSet,
+        y::StateSpaceSet
+    ) where {N}
+
+    Lx, Ly = length(x), length(y)
+
+    @assert 1 ≤ space.init_x ≤ Lx - N + 1 "Invalid `init_x`. Use 1 ≤ init_x ≤ $(Lx - N + 1)."
+    @assert 1 ≤ space.init_y ≤ Ly - N + 1 "Invalid `init_y`. Use 1 ≤ init_y ≤ $(Ly - N + 1)."
+
+    # número de posições iniciais válidas
+    len_W = space.len_x <= 0 ? (Lx - N + 1) - (space.init_x - 1) : space.len_x
+    len_H = space.len_y <= 0 ? (Ly - N + 1) - (space.init_y - 1) : space.len_y
+
+    @assert len_W ≥ 1 "Invalid x-window length."
+    @assert len_H ≥ 1 "Invalid y-window length."
+    @assert space.init_x + len_W + N - 2 ≤ Lx "The x-window exceeds the time-series length. Use len_x ≤ $(Lx - N - space.init_x + 2)."
+    @assert space.init_y + len_H + N - 2 ≤ Ly "The y-window exceeds the time-series length. Use len_y ≤ $(Ly - N - space.init_y + 2)."
+
+    return ExtendedSSRect2(space.init_x, space.init_y, len_W, len_H)
+end
+# =============================================================================
+function RecurrenceMicrostatesAnalysis.get_num_samples(mode::SRandom{<:Real}, space::ExtendedSSRect2)
+    return ceil(Int, mode.sampling_factor * space.len_W * space.len_H)
+end
+# =============================================================================
+function RecurrenceMicrostatesAnalysis.get_sample(
+        ::RecurrenceMicrostatesAnalysis.CPUCore,
+        ::RecurrenceMicrostatesAnalysis.SRandom,
+        space::ExtendedSSRect2,
+        rng,
+        _
+    )
+    
+    i = rand(rng, space.init_W:(space.init_W + space.len_W - 1))
+    j = rand(rng, space.init_H:(space.init_H + space.len_H - 1))
+
+    return i, j
+end
+# =============================================================================
+using Distributions
+using Random
+using RecurrenceAnalysis
+function test()
+    serie = StateSpaceSet(rand(Uniform(0, 1), 1000))
+    rp = RecurrenceMatrix(serie, 0.27)
+
+    ref = dl_average(rp; lmin = 1)
+    comp = measure(RecurrenceAverageDiagonal(1, 0.27), serie, serie) 
+
+    println("D1: ref = $(ref), comp = $(comp); % = $(100 * abs(ref - comp) / ref)")
+
+    ref = trappingtime(rp; lmin = 1)
+    comp = measure(RecurrenceTrappingTime(1, 0.27), serie, serie)
+
+    println("TT1: ref = $(ref), comp = $(comp); % = $(100 * abs(ref - comp) / ref)")
+
+    comp = measure(RecurrenceMeanTime(1, 0.27), serie, serie)
+    println("MT1: ref = $(ref), comp = $(comp); % = $(100 * abs(ref - comp) / ref)")
+
+    ref = dl_average(rp; lmin = 2)
+    comp = measure(RecurrenceAverageDiagonal(2, 0.27), serie, serie) 
+
+    println("D2: ref = $(ref), comp = $(comp); % = $(100 * abs(ref - comp) / ref)")
+end
+
+test()
