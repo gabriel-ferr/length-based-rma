@@ -150,9 +150,9 @@ function measure(
 
     #   Compute quantities
     RR = RecurrenceMicrostatesAnalysis.measure(RecurrenceRate(opt.ε), probs_overall)
-    ∂RT1 = cnts_last_col[1]
+    ∂MT1 = cnts_last_col[1]
 
-    return ((length(x)^2) / ((length(x) - 1)^2)) * (RR) / (probs_overall[3] + (∂RT1 / ((length(x) - 1)^2)))
+    return ((length(x)^2) / ((length(x) - 1)^2)) * (1 - RR) / (probs_overall[3] + (∂MT1 / ((length(x) - 1)^2)))
 end
 
 #################
@@ -176,16 +176,75 @@ function measure(
     cnts_last_col, _ = counts_and_outcomes(
         RecurrenceMicrostates(
             opt.ε, DiagonalMicrostate(2); metric = opt.metric, sampling = opt.sampling,
-            space = LimitedRectSamplingSpace(1, 1, length(x) - 1, 0)
+            space = LimitedRectSamplingSpace(1, 1, 0, 1)
         ),
         x, y
     )
 
     #   Compute quantities
-    RR = RecurrenceMicrostatesAnalysis.measure(RecurrenceRate(opt.ε), probs_overall)
     ∂D2 = (2 * cnts_last_col[4]) - 1
 
     return 1 + ((probs_overall[4] + probs_overall[8]) / (probs_overall[7] + (∂D2 / ((length(x) - 2)^2))))
+end
+
+function measure(
+    opt::RecurrenceTrappingTime{2}, 
+    x::Union{StateSpaceSet, Vector{<:Real}},
+    y::Union{StateSpaceSet, Vector{<:Real}} = x;
+    )
+    @assert length(x) == length(y) "Input must have same size."
+
+    #   Compute the recurrence microstates distributions
+    cnts_overall, outs_overall = counts_and_outcomes(
+        RecurrenceMicrostates(
+            opt.ε, RectMicrostate(3, 1); metric = opt.metric, sampling = opt.sampling
+        ),
+        x, y
+    )
+    probs_overall = Probabilities(cnts_overall, outs_overall)
+
+    cnts_last_col, _ = counts_and_outcomes(
+        RecurrenceMicrostates(
+            opt.ε, RectMicrostate(2, 1); metric = opt.metric, sampling = opt.sampling,
+            space = LimitedRectSamplingSpace(1, 1, 0, 1)
+        ),
+        x, y
+    )
+
+    #   Compute quantities
+    ∂TT2 = cnts_last_col[4]
+
+    return 1 + ((probs_overall[4] + probs_overall[8]) / (probs_overall[7] + (∂TT2 / ((length(x) - 2)^2))))
+end
+
+function measure(
+    opt::RecurrenceMeanTime{2}, 
+    x::Union{StateSpaceSet, Vector{<:Real}},
+    y::Union{StateSpaceSet, Vector{<:Real}} = x;
+    )
+    @assert length(x) == length(y) "Input must have same size."
+
+    #   Compute the recurrence microstates distributions
+    cnts_overall, outs_overall = counts_and_outcomes(
+        RecurrenceMicrostates(
+            opt.ε, RectMicrostate(3, 1); metric = opt.metric, sampling = opt.sampling
+        ),
+        x, y
+    )
+    probs_overall = Probabilities(cnts_overall, outs_overall)
+
+    cnts_last_col, _ = counts_and_outcomes(
+        RecurrenceMicrostates(
+            opt.ε, RectMicrostate(2, 1); metric = opt.metric, sampling = opt.sampling,
+            space = LimitedRectSamplingSpace(1, 1, 0, 1)
+        ),
+        x, y
+    )
+
+    #   Compute quantities
+    ∂MT2 = cnts_last_col[1]
+
+    return 1 + ((probs_overall[1] + probs_overall[5]) / (probs_overall[2] + (∂MT2 / ((length(x) - 2)^2))))
 end
 # =============================================================================
 #   Modify the TriangleSamplingSpace and RectSamplingSpace to select a specific
@@ -274,30 +333,58 @@ function RecurrenceMicrostatesAnalysis.get_sample(
     return i, j
 end
 # =============================================================================
-using Distributions
-using Random
-using RecurrenceAnalysis
-function test()
-    serie = StateSpaceSet(rand(Uniform(0, 1), 1000))
-    rp = RecurrenceMatrix(serie, 0.27)
+# using Distributions
+# using Random
+# using RecurrenceAnalysis
 
-    ref = dl_average(rp; lmin = 1)
-    comp = measure(RecurrenceAverageDiagonal(1, 0.27), serie, serie) 
+# include("rmt.jl")
 
-    println("D1: ref = $(ref), comp = $(comp); % = $(100 * abs(ref - comp) / ref)")
+# function test()
+#     serie = StateSpaceSet(rand(Uniform(0, 1), 1000))
+#     rp = RecurrenceMatrix(serie, 0.27)
 
-    ref = trappingtime(rp; lmin = 1)
-    comp = measure(RecurrenceTrappingTime(1, 0.27), serie, serie)
+#     ref = dl_average(rp; lmin = 1)
+#     comp = measure(RecurrenceAverageDiagonal(1, 0.27), serie, serie) 
 
-    println("TT1: ref = $(ref), comp = $(comp); % = $(100 * abs(ref - comp) / ref)")
+#     println("D1: ref = $(ref), comp = $(comp); % = $(100 * abs(ref - comp) / ref)")
 
-    comp = measure(RecurrenceMeanTime(1, 0.27), serie, serie)
-    println("MT1: ref = $(ref), comp = $(comp); % = $(100 * abs(ref - comp) / ref)")
+#     ref = trappingtime(rp; lmin = 1)
+#     comp = measure(RecurrenceTrappingTime(1, 0.27), serie, serie)
 
-    ref = dl_average(rp; lmin = 2)
-    comp = measure(RecurrenceAverageDiagonal(2, 0.27), serie, serie) 
+#     println("TT1: ref = $(ref), comp = $(comp); % = $(100 * abs(ref - comp) / ref)")
 
-    println("D2: ref = $(ref), comp = $(comp); % = $(100 * abs(ref - comp) / ref)")
-end
+#     ref = mean_recurrence_time(rp; wmin = 1)
+#     comp = measure(RecurrenceMeanTime(1, 0.27), serie, serie)
+#     println("MT1: ref = $(ref), comp = $(comp); % = $(100 * abs(ref - comp) / ref)")
 
-test()
+#     ref = dl_average(rp; lmin = 2)
+#     comp = measure(RecurrenceAverageDiagonal(2, 0.27), serie, serie) 
+
+#     println("D2: ref = $(ref), comp = $(comp); % = $(100 * abs(ref - comp) / ref)")
+
+#     ref = trappingtime(rp; lmin = 2)
+#     comp = measure(RecurrenceTrappingTime(2, 0.27), serie, serie)
+
+#     println("TT2: ref = $(ref), comp = $(comp); % = $(100 * abs(ref - comp) / ref)")
+
+#     ref = mean_recurrence_time(rp; wmin = 2)
+#     comp = measure(RecurrenceMeanTime(2, 0.27), serie, serie)
+#     println("MT2: ref = $(ref), comp = $(comp); % = $(100 * abs(ref - comp) / ref)")
+
+#     # rng = TaskLocalRNG()
+#     # core = RecurrenceMicrostatesAnalysis.CPUCore()
+#     # samp = RecurrenceMicrostatesAnalysis.SRandom(0.1)
+#     # spc = RecurrenceMicrostatesAnalysis.SamplingSpace(
+#     #     DiagonalMicrostate(2),
+#     #     LimitedRectSamplingSpace(1, 1, length(serie) - 1, 1),
+#     #     serie,
+#     #     serie
+#     # )
+
+#     # for _ ∈ 1:1000
+#     #     i, j = RecurrenceMicrostatesAnalysis.get_sample(core, samp, spc, rng, nothing)
+#     #     print("($(i), $(j)); \t")
+#     # end
+# end
+
+# test()

@@ -23,6 +23,7 @@ using RecurrenceAnalysis
 using RecurrenceMicrostatesAnalysis
 # --------------------------------------------------------------------------------
 include(srcdir("measures.jl"))
+include(srcdir("rmt.jl"))
 # --------------------------------------------------------------------------------
 function harmonic_oscilator!(du, u, p, _)
     ω = p
@@ -83,8 +84,8 @@ results = Array{Float64, 6}(undef, NUM_INITIAL_CONDITIONS, length(THRESHOLD_RANG
             results[i, j, s, 2, 1, 1] = trappingtime(rp; lmin = 1)
             results[i, j, s, 2, 1, 2] = trappingtime(rp; lmin = 2)
 
-            results[i, j, s, 3, 1, 1] = meanrecurrencetime(rp; lmin = 1)
-            results[i, j, s, 3, 1, 2] = meanrecurrencetime(rp; lmin = 2)
+            results[i, j, s, 3, 1, 1] = mean_recurrence_time(rp; wmin = 1)
+            results[i, j, s, 3, 1, 2] = mean_recurrence_time(rp; wmin = 2)
             # -----
             results[i, j, s, 1, 2, 1] = complexity(RecurrenceAverageDiagonal(1, dmax[s] * THRESHOLD_RANGE[j]), input[s])
             results[i, j, s, 1, 2, 2] = complexity(RecurrenceAverageDiagonal(2, dmax[s] * THRESHOLD_RANGE[j]), input[s])
