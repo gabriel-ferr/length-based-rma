@@ -20,3 +20,24 @@ function mean_recurrence_time(R::AbstractMatrix{Bool}; wmin = 1)
     end
     return count == 0 ? NaN : total / count
 end
+
+
+# Added a version that considers an analogous to the theiler=0 behavior
+function mean_recurrence_time_v2(R::AbstractMatrix{Bool}; wmin = 1)
+    N = size(R, 1)
+    total = 0
+    count = 0
+    for j in axes(R, 2)
+        run = 0
+        for i in 1:N
+            if R[i, j]
+                if run ≥ wmin; total += run; count += 1; end
+                run = 0
+            else
+                run += 1
+            end
+        end
+        if run ≥ wmin; total += run; count += 1; end   # run touching the end of the column
+    end
+    return count == 0 ? NaN : total / count
+end
