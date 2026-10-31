@@ -78,11 +78,11 @@ results = Array{Float64, 6}(undef, NUM_INITIAL_CONDITIONS, length(THRESHOLD_RANG
         for s ∈ eachindex(input)
             rp = RecurrenceMatrix(input[s], dmax[s] * THRESHOLD_RANGE[j])
             # -----
-            results[i, j, s, 1, 1, 1] = dl_average(rp; lmin = 1)
-            results[i, j, s, 1, 1, 2] = dl_average(rp; lmin = 2)
+            results[i, j, s, 1, 1, 1] = dl_average(rp; lmin = 1, theiler=0)
+            results[i, j, s, 1, 1, 2] = dl_average(rp; lmin = 2, theiler=0)
 
-            results[i, j, s, 2, 1, 1] = trappingtime(rp; lmin = 1)
-            results[i, j, s, 2, 1, 2] = trappingtime(rp; lmin = 2)
+            results[i, j, s, 2, 1, 1] = trappingtime(rp; lmin = 1, theiler=0)
+            results[i, j, s, 2, 1, 2] = trappingtime(rp; lmin = 2, theiler=0)
 
             results[i, j, s, 3, 1, 1] = mean_recurrence_time(rp; wmin = 1)
             results[i, j, s, 3, 1, 2] = mean_recurrence_time(rp; wmin = 2)
