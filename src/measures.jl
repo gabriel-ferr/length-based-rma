@@ -119,7 +119,7 @@ function measure(
 
     #   Compute quantities
     RR = RecurrenceMicrostatesAnalysis.measure(RecurrenceRate(opt.ε), probs_overall)
-    ∂TT1 = cnts_last_col[2]
+    ∂TT1 = cnts_last_col[2] + 1
 
     return ((length(x)^2) / ((length(x) - 1)^2)) * (RR) / (probs_overall[2] + (∂TT1 / ((length(x) - 1)^2)))
 end
