@@ -29,29 +29,29 @@ benchmarks_method_without_mrt = []
 # --------------------------------------------------------------------------------
 function compute_from_rp_with_d(data)
     rp = RecurrenceMatrix(data, FIXED_THRESHOLD)
-    return dl_average(rp; lmin = 2)
+    return dl_average(rp.data; lmin = 2, theiler=0)
 end
 
 function compute_from_rp_without_d(rp)
-    return dl_average(rp; lmin = 2)
+    return dl_average(rp.data; lmin = 2, theiler=0)
 end
 
 function compute_from_rp_with_tt(data)
     rp = RecurrenceMatrix(data, FIXED_THRESHOLD)
-    return trappingtime(rp; lmin = 2)
+    return trappingtime(rp; lmin = 2, theiler=0)
 end
 
 function compute_from_rp_without_tt(rp)
-    return trappingtime(rp; lmin = 2)
+    return trappingtime(rp; lmin = 2, theiler=0)
 end
 
 function compute_from_rp_with_mrt(data)
     rp = RecurrenceMatrix(data, FIXED_THRESHOLD)
-    return meanrecurrencetime(rp; lmin = 2)
+    return mean_recurrence_time_v2(rp; wmin = 2)
 end
 
 function compute_from_rp_without_mrt(rp)
-    return meanrecurrencetime(rp; lmin = 2)
+    return mean_recurrence_time_v2(rp; wmin = 2)
 end
 
 # --------------------------------------------------------------------------------
