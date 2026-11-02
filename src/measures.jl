@@ -80,8 +80,8 @@ function measure(
 
     cnts_last_col, _ = counts_and_outcomes(
         RecurrenceMicrostates(
-            opt.ε, 1; metric = opt.metric, sampling = opt.sampling,
-            space = LimitedRectSamplingSpace(length(x), 1, 0, length(y) - 1)
+            opt.ε, 1; metric = opt.metric, sampling = Full(),
+            space = LimitedRectSamplingSpace(length(x), 1, 0, length(y) - 1),
         ),
         x, y
     )
@@ -111,8 +111,8 @@ function measure(
 
     cnts_last_col, _ = counts_and_outcomes(
         RecurrenceMicrostates(
-            opt.ε, 1; metric = opt.metric, sampling = opt.sampling,
-            space = LimitedRectSamplingSpace(length(x), 1, 0, length(y) - 1)
+            opt.ε, 1; metric = opt.metric, sampling = Full(),
+            space = LimitedRectSamplingSpace(length(x), 1, 0, length(y) - 1),
         ),
         x, y
     )
@@ -142,8 +142,8 @@ function measure(
 
     cnts_last_col, _ = counts_and_outcomes(
         RecurrenceMicrostates(
-            opt.ε, 1; metric = opt.metric, sampling = opt.sampling,
-            space = LimitedRectSamplingSpace(length(x), 1, 0, length(y) - 1)
+            opt.ε, 1; metric = opt.metric, sampling = Full(),
+            space = LimitedRectSamplingSpace(length(x), 1, 0, length(y) - 1),
         ),
         x, y
     )
@@ -175,8 +175,8 @@ function measure(
 
     cnts_last_col, _ = counts_and_outcomes(
         RecurrenceMicrostates(
-            opt.ε, DiagonalMicrostate(2); metric = opt.metric, sampling = opt.sampling,
-            space = LimitedRectSamplingSpace(1, 1, 0, 1)
+            opt.ε, DiagonalMicrostate(2); metric = opt.metric, sampling = Full(),
+            space = LimitedRectSamplingSpace(1, 1, 0, 1),
         ),
         x, y
     )
@@ -205,8 +205,8 @@ function measure(
 
     cnts_last_col, _ = counts_and_outcomes(
         RecurrenceMicrostates(
-            opt.ε, RectMicrostate(2, 1); metric = opt.metric, sampling = opt.sampling,
-            space = LimitedRectSamplingSpace(1, 1, 0, 1)
+            opt.ε, RectMicrostate(2, 1); metric = opt.metric, sampling = Full(),
+            space = LimitedRectSamplingSpace(1, 1, 0, 1),
         ),
         x, y
     )
@@ -235,8 +235,8 @@ function measure(
 
     cnts_last_col, _ = counts_and_outcomes(
         RecurrenceMicrostates(
-            opt.ε, RectMicrostate(2, 1); metric = opt.metric, sampling = opt.sampling,
-            space = LimitedRectSamplingSpace(1, 1, 0, 1)
+            opt.ε, RectMicrostate(2, 1); metric = opt.metric, sampling = Full(),
+            space = LimitedRectSamplingSpace(1, 1, 0, 1),
         ),
         x, y
     )
@@ -318,6 +318,10 @@ end
 function RecurrenceMicrostatesAnalysis.get_num_samples(mode::SRandom{<:Real}, space::ExtendedSSRect2)
     return ceil(Int, mode.sampling_factor * space.len_W * space.len_H)
 end
+
+function RecurrenceMicrostatesAnalysis.get_num_samples(::Full, space::ExtendedSSRect2)
+    return space.len_H * space.len_W
+end
 # =============================================================================
 function RecurrenceMicrostatesAnalysis.get_sample(
         ::RecurrenceMicrostatesAnalysis.CPUCore,
@@ -332,6 +336,19 @@ function RecurrenceMicrostatesAnalysis.get_sample(
 
     return i, j
 end
+
+function RecurrenceMicrostatesAnalysis.get_sample(
+        ::RecurrenceMicrostatesAnalysis.CPUCore,
+        ::RecurrenceMicrostatesAnalysis.Full,
+        space::ExtendedSSRect2,
+        _,
+        m
+)
+    i = ((m - 1) % space.len_W) + space.init_W
+    j = ((m - 1) ÷ space.len_W) + space.init_H
+
+    return i, j
+end
 # =============================================================================
 # using Distributions
 # using Random
@@ -341,34 +358,34 @@ end
 
 # function test()
 #     serie = StateSpaceSet(rand(Uniform(0, 1), 1000))
-#     rp = RecurrenceMatrix(serie, 0.27)
+#     rp = RecurrenceMatrix(serie, 0.98)
 
 #     ref = dl_average(rp; lmin = 1)
-#     comp = measure(RecurrenceAverageDiagonal(1, 0.27), serie, serie) 
+#     comp = measure(RecurrenceAverageDiagonal(1, 0.98), serie, serie) 
 
 #     println("D1: ref = $(ref), comp = $(comp); % = $(100 * abs(ref - comp) / ref)")
 
 #     ref = trappingtime(rp; lmin = 1)
-#     comp = measure(RecurrenceTrappingTime(1, 0.27), serie, serie)
+#     comp = measure(RecurrenceTrappingTime(1, 0.98), serie, serie)
 
 #     println("TT1: ref = $(ref), comp = $(comp); % = $(100 * abs(ref - comp) / ref)")
 
 #     ref = mean_recurrence_time(rp; wmin = 1)
-#     comp = measure(RecurrenceMeanTime(1, 0.27), serie, serie)
+#     comp = measure(RecurrenceMeanTime(1, 0.98), serie, serie)
 #     println("MT1: ref = $(ref), comp = $(comp); % = $(100 * abs(ref - comp) / ref)")
 
 #     ref = dl_average(rp; lmin = 2)
-#     comp = measure(RecurrenceAverageDiagonal(2, 0.27), serie, serie) 
+#     comp = measure(RecurrenceAverageDiagonal(2, 0.98), serie, serie) 
 
 #     println("D2: ref = $(ref), comp = $(comp); % = $(100 * abs(ref - comp) / ref)")
 
 #     ref = trappingtime(rp; lmin = 2)
-#     comp = measure(RecurrenceTrappingTime(2, 0.27), serie, serie)
+#     comp = measure(RecurrenceTrappingTime(2, 0.98), serie, serie)
 
 #     println("TT2: ref = $(ref), comp = $(comp); % = $(100 * abs(ref - comp) / ref)")
 
 #     ref = mean_recurrence_time(rp; wmin = 2)
-#     comp = measure(RecurrenceMeanTime(2, 0.27), serie, serie)
+#     comp = measure(RecurrenceMeanTime(2, 0.98), serie, serie)
 #     println("MT2: ref = $(ref), comp = $(comp); % = $(100 * abs(ref - comp) / ref)")
 
 #     # rng = TaskLocalRNG()
