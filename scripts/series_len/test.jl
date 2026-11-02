@@ -71,9 +71,9 @@ results = Array{Float64, 5}(undef, NUM_INITIAL_CONDITIONS, length(TIMESERIES_LEN
         for s ∈ eachindex(input)
             rp = RecurrenceMatrix(input[s], dmax[s] * FIXED_THRESHOLD)
             # -----
-            results[i, j, s, 1, 1] = dl_average(rp; lmin = 2)
-            results[i, j, s, 2, 1] = trappingtime(rp; lmin = 2)
-            results[i, j, s, 3, 1] = meanrecurrencetime(rp; lmin = 2)
+            results[i, j, s, 1, 1] = dl_average(rp.data; lmin = 2, theiler=0)
+            results[i, j, s, 2, 1] = trappingtime(rp; lmin = 2, theiler=0)
+            results[i, j, s, 3, 1] = mean_recurrence_time_v2(rp; wmin = 2)
             # -----
             results[i, j, s, 1, 2] = complexity(RecurrenceAverageDiagonal(2, dmax[s] * FIXED_THRESHOLD), input[s])
             results[i, j, s, 2, 2] = complexity(RecurrenceTrappingTime(2, dmax[s] * FIXED_THRESHOLD), input[s])

@@ -77,14 +77,14 @@ results = Array{Float64, 7}(undef, NUM_INITIAL_CONDITIONS, length(THRESHOLD_RANG
         for s ∈ eachindex(input)
             rp = RecurrenceMatrix(input[s], dmax[s] * THRESHOLD_RANGE_SAMPLING[j])
             # -----
-            results[i, j, 1, s, 1, 1, 1] = dl_average(rp; lmin = 1)
-            results[i, j, 1, s, 1, 1, 2] = dl_average(rp; lmin = 2)
+            results[i, j, 1, s, 1, 1, 1] = dl_average(rp.data; lmin = 1, theiler=0)
+            results[i, j, 1, s, 1, 1, 2] = dl_average(rp.data; lmin = 2, theiler=0)
 
-            results[i, j, 1, s, 2, 1, 1] = trappingtime(rp; lmin = 1)
-            results[i, j, 1, s, 2, 1, 2] = trappingtime(rp; lmin = 2)
+            results[i, j, 1, s, 2, 1, 1] = trappingtime(rp; lmin = 1, theiler=0)
+            results[i, j, 1, s, 2, 1, 2] = trappingtime(rp; lmin = 2, theiler=0)
 
-            results[i, j, 1, s, 3, 1, 1] = meanrecurrencetime(rp; lmin = 1)
-            results[i, j, 1, s, 3, 1, 2] = meanrecurrencetime(rp; lmin = 2)
+            results[i, j, 1, s, 3, 1, 1] = mean_recurrence_time_v2(rp; wmin = 1)
+            results[i, j, 1, s, 3, 1, 2] = mean_recurrence_time_v2(rp; wmin = 2)
             # -----
             for n ∈ eachindex(SAMPLING_RATIO_RANGE)
                 results[i, j, n, s, 1, 2, 1] = complexity(RecurrenceAverageDiagonal(1, dmax[s] * THRESHOLD_RANGE_SAMPLING[j]; ratio = SAMPLING_RATIO_RANGE[n]), input[s])
